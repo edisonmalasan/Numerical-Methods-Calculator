@@ -6,12 +6,16 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 # Import advanced parsing tools to handle "3x", "cos x", etc.
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
+from calculate import calculate
 
 class NewtonRaphsonApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Newton-Raphson Method Calculator")
         self.root.geometry("1100x650") # Widened to fit the graph
+        
+        # Handle window close button
+        self.root.protocol("WM_DELETE_WINDOW", self.close)
         
         # Configure grid weights to make it resizeable
         self.root.columnconfigure(1, weight=1)
@@ -106,133 +110,15 @@ class NewtonRaphsonApp:
         self.final_label = ttk.Label(final_frame, textvariable=self.final_result_var, style="Result.TLabel", relief="sunken", anchor="center")
         self.final_label.pack(side="left", fill="x", expand=True, ipady=5)
 
+    def close(self):
+        """Handle window close event"""
+        self.root.quit()
+        self.root.destroy()
+
     def calculate(self):
-        # 1. Clear previous data
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        self.final_result_var.set("")
-        self.ax.clear() # Clear graph
-        self.canvas.draw()
-
-        # 2. Get Inputs
-        try:
-            func_str = self.func_entry.get()
-            x_curr = float(self.guess_entry.get())
-            stop_percent = float(self.stop_entry.get())
-            max_iter = 50 
-        except ValueError:
-            messagebox.showerror("Input Error", "Please check your numbers. Ensure Guess and Percentage are valid numbers.")
-            return
-
-        # 3. Parse Function
-        x = sp.symbols('x')
-        try:
-            # Handle user convenience: "3x" -> "3*x", "e^x" -> "exp(x)"
-            # Replace basic caret for power if used
-            func_str_clean = func_str.replace('^', '**')
-            
-            # Use advanced parsing transformations to handle implicit multiplication (3x) and functions (cos x)
-            transformations = (standard_transformations + (implicit_multiplication_application,))
-            f_expr = parse_expr(func_str_clean, transformations=transformations)
-            
-            # Important: 'e' is parsed as a Symbol by default, not the constant 2.718...
-            # We explicitly substitute the symbol 'e' with SymPy's Euler number 'E'
-            f_expr = f_expr.subs(sp.Symbol('e'), sp.E)
-            
-            df_expr = sp.diff(f_expr, x)
-            f = sp.lambdify(x, f_expr, 'numpy')
-            df = sp.lambdify(x, df_expr, 'numpy')
-        except Exception as e:
-            messagebox.showerror("Syntax Error", f"Could not parse function: {e}\nTry using standard syntax like 3*x or cos(x).")
-            return
-
-        # 4. Iteration Loop
-        plot_data = [] # Store points for plotting
-        
-        try:
-            for i in range(max_iter):
-                f_val = f(x_curr)
-                df_val = df(x_curr)
-                
-                # Store for plotting
-                plot_data.append(x_curr)
-
-                if df_val == 0:
-                    messagebox.showerror("Math Error", "Derivative is zero. Division by zero occurred.")
-                    self.final_result_var.set("Failed (Derivative = 0)")
-                    return
-
-                x_next = x_curr - (f_val / df_val)
-
-                if x_next != 0:
-                    ea = abs((x_next - x_curr) / x_next) * 100
-                else:
-                    ea = abs(x_next - x_curr) * 100
-
-                self.tree.insert("", "end", values=(
-                    i+1, 
-                    f"{x_curr:.6f}", 
-                    f"{f_val:.6f}", 
-                    f"{df_val:.6f}", 
-                    f"{ea:.4f}%"
-                ))
-
-                if ea < stop_percent:
-                    self.final_result_var.set(f"Root found: {x_next:.6f} at Iteration {i+1}")
-                    plot_data.append(x_next) # Add final point
-                    self.plot_graph(f, plot_data)
-                    return
-                
-                x_curr = x_next
-            
-            self.final_result_var.set(f"Did not converge within {max_iter} iterations.")
-            self.plot_graph(f, plot_data)
-
-        except Exception as e:
-             messagebox.showerror("Calculation Error", f"An error occurred: {e}")
-
-    def plot_graph(self, f, points):
-        self.ax.clear()
-        
-        if not points: return
-
-        # Determine Range for Plotting
-        # We want to see the root and where we started
-        min_x = min(points)
-        max_x = max(points)
-        padding = (max_x - min_x) * 0.5
-        if padding == 0: padding = 1.0
-        
-        t = np.linspace(min_x - padding, max_x + padding, 400)
-        
-        try:
-            # Plot Function Line
-            y = f(t)
-            # Handle constant functions returning scalar
-            if np.isscalar(y): y = np.full_like(t, y)
-            
-            self.ax.plot(t, y, 'b-', label='f(x)', linewidth=1.5)
-            self.ax.axhline(0, color='black', linewidth=1) # X-axis
-            
-            # Plot Iteration Points
-            # Evaluate y for the specific points
-            pts_arr = np.array(points)
-            y_pts = f(pts_arr)
-            if np.isscalar(y_pts): y_pts = np.full_like(pts_arr, y_pts)
-
-            self.ax.plot(pts_arr, y_pts, 'g.', label='Iterations', markersize=8, alpha=0.6)
-            
-            # Highlight Result (Last point)
-            self.ax.plot(points[-1], y_pts[-1], 'r*', label='Root', markersize=12)
-
-            self.ax.set_title("Function Visualization")
-            self.ax.legend()
-            self.ax.grid(True, linestyle='--', alpha=0.6)
-            self.figure.tight_layout()
-            self.canvas.draw()
-            
-        except Exception as e:
-            print(f"Plotting Error: {e}")
+        # Call the calculate function from calculate.py
+        calculate(self.tree, self.func_entry, self.guess_entry, self.stop_entry, 
+                 self.final_result_var, self.ax, self.canvas, self.figure)
 
 if __name__ == "__main__":
     root = tk.Tk()
