@@ -26,6 +26,10 @@ class NewtonRaphsonApp:
         style.theme_use('clam')
         style.configure("Bold.TLabel", font=('Arial', 10, 'bold'))
         style.configure("Result.TLabel", font=('Arial', 12, 'bold'), foreground="blue")
+        
+        # Configure tag for root row highlighting
+        self.tree_style = ttk.Style()
+        self.tree_style.configure('root_row.Treeview', background='lightgreen')
 
         # ==========================
         # 1. TOP INPUT SECTION
@@ -74,6 +78,9 @@ class NewtonRaphsonApp:
         scroll = ttk.Scrollbar(table_frame, orient="vertical")
         columns = ("Iter", "x_current", "f(x)", "f'(x)", "Error %")
         self.tree = ttk.Treeview(table_frame, columns=columns, show='headings', yscrollcommand=scroll.set, height=10)
+        
+        # Configure tag for root row highlighting
+        self.tree.tag_configure('root', background='lightgreen')
         
         self.tree.heading("Iter", text="Iter")
         self.tree.heading("x_current", text="x (Root)")

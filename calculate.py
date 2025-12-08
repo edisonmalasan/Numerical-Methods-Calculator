@@ -17,7 +17,7 @@ def calculate(tree, func_entry, guess_entry, stop_entry, final_result_var, ax, c
         func_str = func_entry.get()
         x_curr = float(guess_entry.get())
         stop_percent = float(stop_entry.get())
-        max_iter = 50 
+        max_iter = 100 
     except ValueError:
         messagebox.showerror("Input Error", "Please check your numbers. Ensure Guess and Percentage are valid numbers.")
         return
@@ -78,6 +78,9 @@ def calculate(tree, func_entry, guess_entry, stop_entry, final_result_var, ax, c
             if ea < stop_percent:
                 final_result_var.set(f"Root found: {x_next:.6f} at Iteration {i+1}")
                 plot_data.append(x_next) # Add final point
+                # Get the last item in the tree and tag it as root
+                last_item = tree.get_children()[-1]
+                tree.item(last_item, tags=('root',))
                 plot_graph(f, plot_data, ax, canvas, figure)
                 return
             
