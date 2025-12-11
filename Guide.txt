@@ -1,0 +1,6 @@
+There are 2 ways to run the program:
+
+1. Open and run main.py using any compatible Python IDE (e.g. Visual Studio Code) or through console.
+(Note: You must specify your Python Interpreter.)
+
+2. Navigate to the dist folder and run the main.exe file.
